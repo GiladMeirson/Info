@@ -1,0 +1,257 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "myProjDB": "Data Source=Media.ruppin.ac.il;Initial Catalog=igroup141_test2; User ID=igroup141; Password=igroup141_39117"
+  }
+
+
+ 
+}
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+   //--------------------------------------------------------------------------------------------------
+        // This method creates a connection to the database according to the connectionString name in the web.config 
+        //--------------------------------------------------------------------------------------------------
+        public SqlConnection connect(String conString)
+        {
+
+            // read the connection string from the configuration file
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json").Build();
+            string cStr = configuration.GetConnectionString("myProjDB");
+            SqlConnection con = new SqlConnection(cStr);
+            con.Open();
+            return con;
+        }
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+        // --------------------------------------------------------------------------------------------------
+        // This method is a General method which create command with sp 
+        // --------------------------------------------------------------------------------------------------
+
+        private SqlCommand CreateCommandWithStoredProcedureGeneral(String spName, SqlConnection con, Dictionary<string, object> paramDic)
+        {
+
+            SqlCommand cmd = new SqlCommand(); // create the command object
+
+            cmd.Connection = con;              // assign the connection to the command object
+
+            cmd.CommandText = spName;      // can be Select, Insert, Update, Delete 
+
+            cmd.CommandTimeout = 10;           // Time to wait for the execution' The default is 30 seconds
+
+            cmd.CommandType = System.Data.CommandType.StoredProcedure; // the type of the command, can also be text
+
+            if (paramDic != null)
+                foreach (KeyValuePair<string, object> param in paramDic)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value);
+
+                }
+
+
+            return cmd;
+        }
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+        public Profile ValidProfile(string pass , int id)
+        {
+            SqlConnection con;
+            SqlCommand cmd;
+
+            try
+            {
+                con = connect("myProjDB"); // create the connection
+            }
+            catch (Exception ex)
+            {
+                // write to log
+                throw (ex);
+            }
+
+            Dictionary<string, object> paramDic = new Dictionary<string, object>();
+            paramDic.Add("@pass", pass);
+            paramDic.Add("@id", id);
+
+
+
+            cmd = CreateCommandWithStoredProcedureGeneral("sp_validProfiles", con, paramDic); // create the command
+
+            try
+            {
+
+                SqlDataReader dataReader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+                Profile profile = new Profile();
+                while (dataReader.Read())
+                {
+                    profile.Id = Convert.ToInt32(dataReader["Id"]);
+                    if (profile.Id != -1)
+                    {
+                        profile.URLId = dataReader["URLId"].ToString();
+                        profile.OwnerName = dataReader["OwnerName"].ToString();
+                        profile.OwnerEmail = dataReader["OwnerEmail"].ToString();
+                        profile.OwnerPhone = dataReader["OwnerPhone"].ToString();
+                        profile.PetType = dataReader["PetType"].ToString();
+                        profile.PetName = dataReader["PetName"].ToString();
+                        profile.PetAge = Convert.ToSingle(dataReader["PetAge"]);
+                        profile.PetGender = dataReader["PetGender"].ToString();
+                        profile.VaccineRabies = Convert.ToBoolean(dataReader["VaccineRabies"]);
+                        profile.VaccineDistemper = Convert.ToBoolean(dataReader["VaccineDistemper"]);
+                        profile.Dewormed = Convert.ToBoolean(dataReader["Dewormed"]);
+                        profile.Neutered = Convert.ToBoolean(dataReader["Neutered"]);
+                        profile.ProfileLink = dataReader["ProfileLink"].ToString();
+                        profile.CoverLink = dataReader["CoverLink"].ToString();
+
+                    }
+                    else
+                    {
+                        return profile;
+                    }
+
+
+                }
+                return profile;
+            }
+            catch (Exception ex)
+            {
+                // write to log
+                throw (ex);
+            }
+            finally
+            {
+                if (con != null)
+                {
+                    // close the db connection
+                    con.Close();
+                }
+            }
+        }
+
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+ public int UpdateProfile(Profile profile)
+        {
+            SqlConnection con;
+            SqlCommand cmd;
+
+            try
+            {
+                con = connect("myProjDB"); // create the connection
+            }
+            catch (Exception ex)
+            {
+                // write to log
+                throw (ex);
+            }
+
+            Dictionary<string, object> paramDic = new Dictionary<string, object>();
+            paramDic.Add("@Id", profile.Id);
+            paramDic.Add("@OwnerName", profile.OwnerName);
+            paramDic.Add("@OwnerEmail", profile.OwnerEmail);
+            paramDic.Add("@OwnerPhone", profile.OwnerPhone);
+            paramDic.Add("@PetType", profile.PetType);
+            paramDic.Add("@PetName", profile.PetName);
+            paramDic.Add("@PetAge", profile.PetAge);
+            paramDic.Add("@PetGender", profile.PetGender);
+            paramDic.Add("@VaccineRabies", profile.VaccineRabies);
+            paramDic.Add("@VaccineDistemper", profile.VaccineDistemper);
+            paramDic.Add("@Dewormed", profile.Dewormed);
+            paramDic.Add("@Neutered", profile.Neutered);
+            paramDic.Add("@ProfileLink", profile.ProfileLink);
+            paramDic.Add("@CoverLink", profile.CoverLink);
+            paramDic.Add("@Pass", profile.Password);
+
+
+            cmd = CreateCommandWithStoredProcedureGeneral("sp_editProfile", con, paramDic); // create the command
+
+            try
+            {
+
+                int numEff = cmd.ExecuteNonQuery();
+                return numEff;
+            }
+            catch (Exception ex)
+            {
+                // write to log
+                throw (ex);
+            }
+            finally
+            {
+                if (con != null)
+                {
+                    // close the db connection
+                    con.Close();
+                }
+            }
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
